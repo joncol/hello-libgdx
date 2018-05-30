@@ -5,5 +5,5 @@
   (:gen-class))
 
 (defn -main []
-  (LwjglApplication. (hello-libgdx.core.Game.) "hello, libgdx" 800 600)
+  (LwjglApplication. (hello-libgdx.core.Game.) "hello, libgdx" 1920 1200)
   (Keyboard/enableRepeatEvents true))

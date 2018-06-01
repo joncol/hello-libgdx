@@ -37,13 +37,9 @@
 (defn -render [this]
   (let [state @(.state this)
         msg   (str (int (.getFramesPerSecond Gdx/graphics)) " fps")]
-    (try
-      (.setText (:glyph-layout state) (:font state) msg)
-      (.begin (:batch state))
-      (.draw (:font state) (:batch state) (:glyph-layout state)
-             (float 5) (float (- (.getHeight Gdx/graphics)
-                                 (.-height (:glyph-layout state)))))
-      (catch Exception e
-        (prn e))
-      (finally
-        (.end (:batch state))))))
+    (.setText (:glyph-layout state) (:font state) msg)
+    (.begin (:batch state))
+    (.draw (:font state) (:batch state) (:glyph-layout state)
+           (float 5) (float (- (.getHeight Gdx/graphics)
+                               (.-height (:glyph-layout state)))))
+    (.end (:batch state))))

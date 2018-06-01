@@ -17,7 +17,7 @@
 
 (defn show [stage])
 
-(defn render [stage delta]
+(defn render [stage frame-rate delta]
   (reset! stage (Stage.))
   (.glClearColor (Gdx/gl) 0 0 0 0)
   (.glClear (Gdx/gl) GL20/GL_COLOR_BUFFER_BIT)
@@ -43,20 +43,23 @@
     (.addActor @stage label))
   (doto @stage
     (.act delta)
-    (.draw)))
+    (.draw))
+  (.render frame-rate))
 
-(def main-screen
-  (let [stage (atom nil)]
+(defn main-screen []
+  (let [stage      (atom nil)
+        frame-rate (hello-libgdx.FrameRate.)]
     (proxy [Screen] []
       (show []
         (show stage))
       (render [delta]
-        (render stage delta))
+        (render stage frame-rate delta))
       (dispose [])
       (hide [])
       (pause [])
-      (resize [w h])
+      (resize [w h]
+        (.resize frame-rate w h))
       (resume []))))
 
 (defn -create [^Game this]
-  (.setScreen this main-screen))
+  (.setScreen this (main-screen)))

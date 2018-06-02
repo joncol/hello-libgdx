@@ -1,10 +1,12 @@
 (ns hello-libgdx.screens.main-screen
+  (:require [hello-libgdx.font-generator :refer [generate-font]])
   (:import [com.badlogic.gdx
             Game Gdx Graphics Input Input$Keys InputProcessor Screen]
            [com.badlogic.gdx.graphics Color GL20 OrthographicCamera]
-           [com.badlogic.gdx.graphics.g2d BitmapFont]
+           [com.badlogic.gdx.graphics.g2d BitmapFont GlyphLayout SpriteBatch]
            [com.badlogic.gdx.graphics.glutils
             ShapeRenderer ShapeRenderer$ShapeType]
+           [com.badlogic.gdx.math Matrix4 Vector3]
            [com.badlogic.gdx.scenes.scene2d Stage]
            [com.badlogic.gdx.scenes.scene2d.ui Label Label$LabelStyle]
            [com.badlogic.gdx.utils Align]))
@@ -30,31 +32,30 @@
 (def cyan3 [0.235 0.388 0.509])
 (def cyan4 [0.039 0.239 0.384])
 
+(defn- ->Color [[r g b & [a]]]
+  (Color. r g b (or a 1.0)))
+
 (defn- initial-state []
-  (let [state {:active?        true
-               :rect-pos       [0 0]
-               :rect-size      250
-               :angle1         0
-               :angle2         0
-               :angle3         0
-               :angle4         0
-               :angle5         0
-               :shape-renderer (ShapeRenderer.)
-               :world-width    (.getWidth Gdx/graphics)
-               :world-height   (.getHeight Gdx/graphics)
-               :camera         (OrthographicCamera. (.getWidth Gdx/graphics)
-                                                    (.getHeight Gdx/graphics))
-               :stage          (Stage.)
-               :hud            (hello-libgdx.Hud.)}
-        stage (:stage state)
-        style (Label$LabelStyle. (BitmapFont.) (Color. 1 1 1 1))
-        label (doto (Label. "hello, libgdx!" style)
-                (.setFontScale 4)
-                (.setWidth (.getWidth Gdx/graphics))
-                (.setAlignment Align/center)
-                (.setPosition 0 (quot (.getHeight Gdx/graphics) 2)))]
-    (.addActor stage label)
-    state))
+  {:active?        true
+   :font           (generate-font "fonts/AbrilFatface-Regular.ttf"
+                                  :size 100 #_#_:border-width 2
+                                  :shadow-offset-x 4
+                                  :shadow-offset-y 4
+                                  :shadow-color (Color. 0 0 0 0.25))
+   :rect-pos       [0 0]
+   :rect-size      250
+   :angle1         0
+   :angle2         0
+   :angle3         0
+   :angle4         0
+   :angle5         0
+   :shape-renderer (ShapeRenderer.)
+   :world-width    (.getWidth Gdx/graphics)
+   :world-height   (.getHeight Gdx/graphics)
+   :camera         (OrthographicCamera. (.getWidth Gdx/graphics)
+                                        (.getHeight Gdx/graphics))
+   :stage          (Stage.)
+   :hud            (hello-libgdx.Hud.)})
 
 (defn -init []
   [[] (atom (initial-state))])
@@ -132,7 +133,7 @@
 (defn- set-color [renderer [r g b & [a]]]
   (.setColor renderer r g b (or a 1.0)))
 
-(defn render-rects [state]
+(defn- render-rects [state]
   (let [[x y]     (:rect-pos state)
         rect-size (:rect-size state)
         a1        (:angle1 state)
@@ -192,6 +193,44 @@
       (finally
         (.end (:shape-renderer state))))))
 
+(defn- render-text [state text]
+  (let [font         (:font state)
+        glyph-layout (GlyphLayout. font text)
+        w            (.-width glyph-layout)
+        h            (.-height glyph-layout)
+        batch        (SpriteBatch.)
+        a1           (:angle1 state)
+        a2           (:angle2 state)
+        a3           (:angle3 state)
+        a4           (:angle4 state)
+        a5           (:angle5 state)]
+    (try
+      (.begin batch)
+      ;; (.setTransformMatrix batch transl)
+      (let [m (doto (Matrix4.)
+                (.setToTranslation (float (/ (.getWidth Gdx/graphics) 2))
+                                   (float (/ (.getHeight Gdx/graphics) 2))
+                                   (float 0))
+                (.mul (doto (Matrix4.)
+                        (.setToRotation (Vector3. 0 0 1)
+                                        (* 45
+                                           (Math/sin (float a1))
+                                           (Math/sin (float a2))
+                                           (Math/sin (float a3))
+                                           (Math/sin (float a4))
+                                           (Math/sin (float a5))))))
+                (.mul (doto (Matrix4.)
+                        (.setToTranslation
+                         (float (- (/ w 2)))
+                         (float (/ h 2))
+                         (float 0)))))]
+        (.setTransformMatrix batch m))
+      (.draw font batch glyph-layout (float 0) (float 0))
+      (catch Exception e
+        (prn e))
+      (finally
+        (.end batch)))))
+
 (defn- update-state [state delta]
   (swap! state
          (fn [state]
@@ -211,16 +250,20 @@
                  (assoc :rect-size (+ 500 (* 200 (Math/sin a1)))))))))
 
 (defn -render [this delta]
-  (let [state @(.state this)]
-    (.glClearColor (Gdx/gl) 0 0 0 0)
-    (.glClear (Gdx/gl) GL20/GL_COLOR_BUFFER_BIT)
-    (when (:active? state)
-      (render-rects state)
-      (doto (:stage state)
-        (.act delta)
-        (.draw))
-      (update-state (.state this) delta))
-    (.render (:hud state))))
+  (try
+    (let [state @(.state this)]
+      (.glClearColor (Gdx/gl) 0 0 0 0)
+      (.glClear (Gdx/gl) GL20/GL_COLOR_BUFFER_BIT)
+      (when (:active? state)
+        (render-rects state)
+        (render-text state "hello, libgdx!")
+        (doto (:stage state)
+          (.act delta)
+          (.draw))
+        (update-state (.state this) delta))
+      (.render (:hud state)))
+    (catch Exception e
+      (prn e))))
 
 (defn -pause [this])
 

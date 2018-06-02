@@ -26,7 +26,8 @@
 (defn -init []
   [[] (atom {:active       true
              :batch        (SpriteBatch.)
-             :font         (generate-font "fonts/UbuntuMono-Regular.ttf" 20)
+             :font         (generate-font "fonts/UbuntuMono-Regular.ttf"'
+                                          :size 20)
              :glyph-layout (GlyphLayout.)
              :camera       (OrthographicCamera.
                             (.getWidth Gdx/graphics)

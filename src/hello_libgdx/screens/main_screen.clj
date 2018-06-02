@@ -75,7 +75,6 @@
      :angle3         0
      :angle4         0
      :angle5         0
-     :shape-renderer (ShapeRenderer.)
      :world-width    (.getWidth Gdx/graphics)
      :world-height   (.getHeight Gdx/graphics)
      :camera         camera
@@ -165,7 +164,8 @@
   (.setColor renderer r g b (or a 1.0)))
 
 (defn- render-rects [state]
-  (let [[x y]     (:rect-pos state)
+  (let [renderer  (ShapeRenderer.)
+        [x y]     (:rect-pos state)
         z         -250
         rect-size (:rect-size state)
         a1        (:angle1 state)
@@ -174,7 +174,7 @@
         a4        (:angle4 state)
         a5        (:angle5 state)]
     (try
-      (doto (:shape-renderer state)
+      (doto renderer
         (.setProjectionMatrix (.combined (:camera state)))
         (.begin ShapeRenderer$ShapeType/Filled)
         (set-color yellow2)
@@ -223,7 +223,7 @@
       (catch Exception e
         (prn e))
       (finally
-        (.end (:shape-renderer state))))))
+        (.end renderer)))))
 
 (defn- render-cube [state]
   (let [renderer  (ShapeRenderer.)

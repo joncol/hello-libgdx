@@ -16,7 +16,7 @@
                   :classifier "natives-desktop"]
                  [com.badlogicgames.gdx/gdx-platform "1.9.8"
                   :classifier "natives-desktop"]
-                 [org.clojure/clojure "1.8.0"]]
+                 [org.clojure/clojure "1.9.0"]]
   :source-paths ["src"]
   :javac-options ["-target" "1.8" "-source" "1.8" "-Xlint:-options"]
   :aot [hello-libgdx.hud

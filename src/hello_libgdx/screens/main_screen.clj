@@ -1,15 +1,13 @@
 (ns hello-libgdx.screens.main-screen
   (:require [hello-libgdx.font-generator :refer [generate-font]])
-  (:import [com.badlogic.gdx
-            Game Gdx Graphics Input Input$Keys InputProcessor Screen]
-           [com.badlogic.gdx.graphics Color GL20 OrthographicCamera]
+  (:import [com.badlogic.gdx Game Gdx Graphics Input Input$Keys InputProcessor Screen]
+           [com.badlogic.gdx.graphics Color GL20 OrthographicCamera Texture Texture$TextureFilter]
            [com.badlogic.gdx.graphics.g2d BitmapFont GlyphLayout SpriteBatch]
-           [com.badlogic.gdx.graphics.glutils
-            ShapeRenderer ShapeRenderer$ShapeType]
+           [com.badlogic.gdx.graphics.glutils ShapeRenderer ShapeRenderer$ShapeType]
            [com.badlogic.gdx.math Matrix4 Vector3]
-           [com.badlogic.gdx.scenes.scene2d Stage]
+           com.badlogic.gdx.scenes.scene2d.Stage
            [com.badlogic.gdx.scenes.scene2d.ui Label Label$LabelStyle]
-           [com.badlogic.gdx.utils Align]))
+           com.badlogic.gdx.utils.Align))
 
 (gen-class :name hello-libgdx.screens.main-screen.MainScreen
            :implements [com.badlogic.gdx.Screen]
@@ -38,9 +36,11 @@
 (defn- initial-state []
   {:active?        true
    :font           (generate-font "fonts/AbrilFatface-Regular.ttf"
-                                  :size 100 #_#_:border-width 2
-                                  :shadow-offset-x 4
-                                  :shadow-offset-y 4
+                                  #_"fonts/UbuntuMono-Regular.ttf"
+                                  :size 100
+                                  :color (->Color red4)
+                                  :shadow-offset-x 6
+                                  :shadow-offset-y 6
                                   :shadow-color (Color. 0 0 0 0.25))
    :rect-pos       [0 0]
    :rect-size      250
@@ -206,7 +206,6 @@
         a5           (:angle5 state)]
     (try
       (.begin batch)
-      ;; (.setTransformMatrix batch transl)
       (let [m (doto (Matrix4.)
                 (.setToTranslation (float (/ (.getWidth Gdx/graphics) 2))
                                    (float (/ (.getHeight Gdx/graphics) 2))
@@ -225,6 +224,9 @@
                          (float (/ h 2))
                          (float 0)))))]
         (.setTransformMatrix batch m))
+      (.setFilter (.. font getRegion getTexture)
+                  Texture$TextureFilter/Linear
+                  Texture$TextureFilter/Linear)
       (.draw font batch glyph-layout (float 0) (float 0))
       (catch Exception e
         (prn e))
@@ -253,10 +255,15 @@
   (try
     (let [state @(.state this)]
       (.glClearColor (Gdx/gl) 0 0 0 0)
-      (.glClear (Gdx/gl) GL20/GL_COLOR_BUFFER_BIT)
+      (.glClear (Gdx/gl)
+                (bit-or GL20/GL_COLOR_BUFFER_BIT
+                        GL20/GL_DEPTH_BUFFER_BIT
+                        (if (.. Gdx/graphics getBufferFormat -coverageSampling)
+                          GL20/GL_COVERAGE_BUFFER_BIT_NV
+                          0)))
       (when (:active? state)
         (render-rects state)
-        (render-text state "hello, libgdx!")
+        (render-text state "hello, libGDX!")
         (doto (:stage state)
           (.act delta)
           (.draw))

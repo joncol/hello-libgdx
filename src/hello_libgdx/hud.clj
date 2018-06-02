@@ -47,7 +47,8 @@
                       (print-table ["Key" "Function"]
                                    [{"Key" "F1" "Function" "Toggle HUD"}
                                     {"Key" "C-h" "Function" "Toggle screen"}
-                                    {"Key" "C-r" "Function" "Reset state"}]))]
+                                    {"Key" "C-r" "Function" "Reset state"}
+                                    {"Key" "C-q" "Function" "Quit"}]))]
       (.setText (:glyph-layout state) (:font state) (str fps "\n" shortcuts))
       (.begin (:batch state))
       (.draw (:font state) (:batch state) (:glyph-layout state)

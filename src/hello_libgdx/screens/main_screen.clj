@@ -78,7 +78,9 @@
   (cond
     (= key-code Input$Keys/F1) (.toggleShow (:hud @state))
     (and (ctrl-pressed? state) (= key-code Input$Keys/R)) (reset-state! state)
-    (and (ctrl-pressed? state) (= key-code Input$Keys/H)) (toggle-active state))
+    (and (ctrl-pressed? state) (= key-code Input$Keys/H)) (toggle-active state)
+    (and (ctrl-pressed? state) (= key-code Input$Keys/Q)) (.exit Gdx/app))
+
   (swap! state (fn [state] (assoc-in state [:keys-pressed key-code] true))))
 
 (defn key-typed [state ch])

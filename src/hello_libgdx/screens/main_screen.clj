@@ -79,6 +79,24 @@
 (defn- set-color [renderer [r g b & [a]]]
   (.setColor renderer r g b (or a 1.0)))
 
+(defn- update-state [state delta]
+  (swap! state
+         (fn [state]
+           (let [a1 (:angle1 state)
+                 a2 (:angle2 state)
+                 a3 (:angle3 state)
+                 w  (:world-width state)
+                 h  (:world-height state)]
+             (-> state
+                 (update :angle1 #(+ % (* delta 0.5)))
+                 (update :angle2 #(+ % (* delta 0.15)))
+                 (update :angle3 #(+ % (* delta 0.85)))
+                 (update :angle4 #(+ % (* delta 0.35)))
+                 (update :angle5 #(+ % (* delta 0.95)))
+                 (assoc :rect-pos [(* w (Math/sin a1) (Math/sin a2) 0.25)
+                                   (* h (Math/sin a1) (Math/sin a3) 0.25)])
+                 (assoc :rect-size (+ 500 (* 200 (Math/sin a1)))))))))
+
 (defn -render [this delta]
   (let [state @(.state this)]
     (.glClearColor (Gdx/gl) 0 0 0 0)
@@ -145,22 +163,7 @@
       (.act delta)
       (.draw))
     (.render (:frame-rate state))
-    (swap! (.state this)
-           (fn [state]
-             (let [a1 (:angle1 state)
-                   a2 (:angle2 state)
-                   a3 (:angle3 state)
-                   w  (:world-width state)
-                   h  (:world-height state)]
-               (-> state
-                   (update :angle1 #(+ % (* delta 0.5)))
-                   (update :angle2 #(+ % (* delta 0.15)))
-                   (update :angle3 #(+ % (* delta 0.85)))
-                   (update :angle4 #(+ % (* delta 0.35)))
-                   (update :angle5 #(+ % (* delta 0.95)))
-                   (assoc :rect-pos [(* w (Math/sin a1) (Math/sin a2) 0.25)
-                                     (* h (Math/sin a1) (Math/sin a3) 0.25)])
-                   (assoc :rect-size (+ 250 (* 200 (Math/sin a1))))))))))
+    (update-state (.state this) delta)))
 
 (defn -pause [this])
 

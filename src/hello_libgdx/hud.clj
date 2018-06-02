@@ -1,10 +1,9 @@
 (ns hello-libgdx.hud
-  (:require [clojure.pprint :refer [print-table]])
+  (:require [clojure.pprint :refer [print-table]]
+            [hello-libgdx.font-generator :refer [generate-font]])
   (:import [com.badlogic.gdx Gdx]
            [com.badlogic.gdx.graphics Color OrthographicCamera]
            [com.badlogic.gdx.graphics.g2d BitmapFont GlyphLayout SpriteBatch]
-           [com.badlogic.gdx.graphics.g2d.freetype
-            FreeTypeFontGenerator FreeTypeFontGenerator$FreeTypeFontParameter]
            [com.badlogic.gdx.utils BufferUtils Disposable TimeUtils]))
 
 (gen-class :name hello-libgdx.Hud
@@ -24,23 +23,14 @@
     (.dispose (:glyph-layout state))
     (.dispose (:camera state))))
 
-(defn- font-params []
-  (let [params (FreeTypeFontGenerator$FreeTypeFontParameter.)]
-    (set! (.size params) 20)
-    params))
-
 (defn -init []
-  (let [font-gen (FreeTypeFontGenerator.
-                  (.internal Gdx/files "fonts/UbuntuMono-Regular.ttf"))
-        font     (.generateFont font-gen (font-params))]
-    (.dispose font-gen)
-    [[] (atom {:active       true
-               :batch        (SpriteBatch.)
-               :font         font
-               :glyph-layout (GlyphLayout.)
-               :camera       (OrthographicCamera.
-                              (.getWidth Gdx/graphics)
-                              (.getHeight Gdx/graphics))})]))
+  [[] (atom {:active       true
+             :batch        (SpriteBatch.)
+             :font         (generate-font "fonts/UbuntuMono-Regular.ttf" 20)
+             :glyph-layout (GlyphLayout.)
+             :camera       (OrthographicCamera.
+                            (.getWidth Gdx/graphics)
+                            (.getHeight Gdx/graphics))})])
 
 (defn -resize [this width height]
   (let [state  @(.state this)

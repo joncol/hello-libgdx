@@ -4,5 +4,4 @@
            org.lwjgl.input.Keyboard))
 
 (defn -main []
-  (LwjglApplication. (hello-libgdx.core.Game.) "hello, libgdx" 1920 1200)
-  (Keyboard/enableRepeatEvents true))
+  (LwjglApplication. (hello-libgdx.core.Game.) "hello, libgdx" 1920 1200))

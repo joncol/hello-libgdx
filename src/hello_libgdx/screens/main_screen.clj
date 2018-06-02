@@ -1,5 +1,6 @@
 (ns hello-libgdx.screens.main-screen
-  (:import [com.badlogic.gdx Game Gdx Graphics Input Screen]
+  (:import [com.badlogic.gdx
+            Game Gdx Graphics Input Input$Keys InputProcessor Screen]
            [com.badlogic.gdx.graphics Color GL20 OrthographicCamera]
            [com.badlogic.gdx.graphics.g2d BitmapFont]
            [com.badlogic.gdx.graphics.glutils
@@ -29,24 +30,22 @@
 (def cyan3 [0.235 0.388 0.509])
 (def cyan4 [0.039 0.239 0.384])
 
-(defn -init []
-  [[] (atom {:rect-pos       [0 0]
-             :rect-size      250
-             :angle1         0
-             :angle2         0
-             :angle3         0
-             :angle4         0
-             :angle5         0
-             :shape-renderer (ShapeRenderer.)
-             :world-width    (.getWidth Gdx/graphics)
-             :world-height   (.getHeight Gdx/graphics)
-             :camera         (OrthographicCamera. (.getWidth Gdx/graphics)
-                                                  (.getHeight Gdx/graphics))
-             :stage          (Stage.)
-             :frame-rate     (hello-libgdx.FrameRate.)})])
-
-(defn -show [this]
-  (let [state @(.state this)
+(defn- initial-state []
+  (let [state {:active?        false
+               :rect-pos       [0 0]
+               :rect-size      250
+               :angle1         0
+               :angle2         0
+               :angle3         0
+               :angle4         0
+               :angle5         0
+               :shape-renderer (ShapeRenderer.)
+               :world-width    (.getWidth Gdx/graphics)
+               :world-height   (.getHeight Gdx/graphics)
+               :camera         (OrthographicCamera. (.getWidth Gdx/graphics)
+                                                    (.getHeight Gdx/graphics))
+               :stage          (Stage.)
+               :frame-rate     (hello-libgdx.FrameRate.)}
         stage (:stage state)
         style (Label$LabelStyle. (BitmapFont.) (Color. 1 1 1 1))
         label (doto (Label. "hello, libgdx!" style)
@@ -54,7 +53,42 @@
                 (.setWidth (.getWidth Gdx/graphics))
                 (.setAlignment Align/center)
                 (.setPosition 0 (quot (.getHeight Gdx/graphics) 2)))]
-    (.addActor stage label)))
+    (.addActor stage label)
+    state))
+
+(defn -init []
+  [[] (atom (initial-state))])
+
+(defn key-down [state key-code]
+  (swap! state (fn [state] (assoc-in state [:keys-pressed key-code] true))))
+
+(defn key-typed [state ch]
+  (when (= ch \h)
+    (swap! state (fn [state] (update state :active? not)))))
+
+(defn key-up [state key-code]
+  (swap! state (fn [state] (assoc-in state [:keys-pressed key-code] false))))
+
+(defn input-processor [state]
+  (proxy [com.badlogic.gdx.InputProcessor] []
+    (keyDown [key-code]
+      (key-down state key-code)
+      true)
+    (keyTyped [ch]
+      (key-typed state ch)
+      true)
+    (keyUp [key-code]
+      (key-up state key-code)
+      true)
+    (mouseMoved [x y] false)
+    (scrolled [amount] false)
+    (touchDown [x y pointer button] false)
+    (touchDragged [x y pointer] false)
+    (touchUp [x y pointer button] false)))
+
+(defn -show [this]
+  (swap! (.state this) (fn [state] (update state :active? (constantly true))))
+  (.setInputProcessor Gdx/input (input-processor (.state this))))
 
 (defn -resize [this width height]
   (let [state @(.state this)]
@@ -79,6 +113,66 @@
 (defn- set-color [renderer [r g b & [a]]]
   (.setColor renderer r g b (or a 1.0)))
 
+(defn render-rects [state]
+  (let [[x y]     (:rect-pos state)
+        rect-size (:rect-size state)
+        a1        (:angle1 state)
+        a2        (:angle2 state)
+        a3        (:angle3 state)
+        a4        (:angle4 state)
+        a5        (:angle5 state)]
+    (try
+      (doto (:shape-renderer state)
+        (.setProjectionMatrix (.combined (:camera state)))
+        (.begin ShapeRenderer$ShapeType/Filled)
+        (set-color yellow2)
+        .identity
+        (.translate x y 0)
+        (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
+        (draw-rect rect-size)
+
+        (set-color cyan1)
+        .identity
+        (.translate x y 0)
+        (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
+        (.translate (- (quot rect-size 2)) (- (quot rect-size 2)) 0)
+        (.rotate 0 0 1 (* 90 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+        (draw-triangle (quot rect-size 4))
+
+        (set-color cyan2)
+        .identity
+        (.translate x y 0)
+        (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
+        (.translate (quot rect-size 2) (- (quot rect-size 2)) 0)
+        (.rotate 0 0 1 (* 180 (Math/sin a3) (Math/sin a4) (Math/sin a5)))
+        (draw-triangle (quot rect-size 4))
+
+        (set-color cyan3)
+        .identity
+        (.translate x y 0)
+        (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
+        (.translate (quot rect-size 2) (quot rect-size 2) 0)
+        (.rotate 0 0 1 (* 270 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+        (draw-triangle (quot rect-size 4))
+
+        (set-color cyan4)
+        .identity
+        (.translate x y 0)
+        (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
+        (.translate (- (quot rect-size 2)) (quot rect-size 2) 0)
+        (.rotate 0 0 1 (* 360 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+        (draw-triangle (quot rect-size 4))
+
+        (set-color red2)
+        .identity
+        (.translate x y 0)
+        (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a5)))
+        (draw-rect (quot rect-size 2)))
+      (catch Exception e
+        (prn e))
+      (finally
+        (.end (:shape-renderer state))))))
+
 (defn- update-state [state delta]
   (swap! state
          (fn [state]
@@ -101,72 +195,17 @@
   (let [state @(.state this)]
     (.glClearColor (Gdx/gl) 0 0 0 0)
     (.glClear (Gdx/gl) GL20/GL_COLOR_BUFFER_BIT)
-    (let [[x y]     (:rect-pos state)
-          rect-size (:rect-size state)
-          a1        (:angle1 state)
-          a2        (:angle2 state)
-          a3        (:angle3 state)
-          a4        (:angle4 state)
-          a5        (:angle5 state)]
-      (try
-        (doto (:shape-renderer state)
-          (.setProjectionMatrix (.combined (:camera state)))
-          (.begin ShapeRenderer$ShapeType/Filled)
-          (set-color yellow2)
-          .identity
-          (.translate x y 0)
-          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-          (draw-rect rect-size)
-
-          (set-color cyan1)
-          .identity
-          (.translate x y 0)
-          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-          (.translate (- (quot rect-size 2)) (- (quot rect-size 2)) 0)
-          (.rotate 0 0 1 (* 90 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-          (draw-triangle (quot rect-size 4))
-
-          (set-color cyan2)
-          .identity
-          (.translate x y 0)
-          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-          (.translate (quot rect-size 2) (- (quot rect-size 2)) 0)
-          (.rotate 0 0 1 (* 180 (Math/sin a3) (Math/sin a4) (Math/sin a5)))
-          (draw-triangle (quot rect-size 4))
-
-          (set-color cyan3)
-          .identity
-          (.translate x y 0)
-          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-          (.translate (quot rect-size 2) (quot rect-size 2) 0)
-          (.rotate 0 0 1 (* 270 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-          (draw-triangle (quot rect-size 4))
-
-          (set-color cyan4)
-          .identity
-          (.translate x y 0)
-          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-          (.translate (- (quot rect-size 2)) (quot rect-size 2) 0)
-          (.rotate 0 0 1 (* 360 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-          (draw-triangle (quot rect-size 4))
-
-          (set-color red2)
-          .identity
-          (.translate x y 0)
-          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a5)))
-          (draw-rect (quot rect-size 2)))
-        (catch Exception e
-          (prn e))
-        (finally
-          (.end (:shape-renderer state)))))
-    (doto (:stage state)
-      (.act delta)
-      (.draw))
-    (.render (:frame-rate state))
-    (update-state (.state this) delta)))
+    (when (:active? state)
+      (render-rects state)
+      (doto (:stage state)
+        (.act delta)
+        (.draw))
+      (update-state (.state this) delta))
+    (.render (:frame-rate state))))
 
 (defn -pause [this])
 
 (defn -resume [this])
 
-(defn -hide [this])
+(defn -hide [this]
+  (swap! (.state this) (fn [state] (update state :active? (constantly false)))))

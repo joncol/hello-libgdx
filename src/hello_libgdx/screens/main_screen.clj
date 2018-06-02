@@ -31,7 +31,7 @@
 (def cyan4 [0.039 0.239 0.384])
 
 (defn- initial-state []
-  (let [state {:active?        false
+  (let [state {:active?        true
                :rect-pos       [0 0]
                :rect-size      250
                :angle1         0
@@ -59,12 +59,29 @@
 (defn -init []
   [[] (atom (initial-state))])
 
+(defn reset-state! [state]
+  (swap! state #(merge (initial-state) (select-keys % [:keys-pressed]))))
+
+(defn keys-pressed? [state ks]
+  (some identity (vals (select-keys (:keys-pressed @state) ks))))
+
+(defn- ctrl-pressed? [state]
+  (keys-pressed? state [Input$Keys/CONTROL_LEFT
+                        Input$Keys/CONTROL_RIGHT]))
+
+(defn- toggle-active [state]
+  (swap! state
+         (fn [state]
+           (update state :active? not))))
+
 (defn key-down [state key-code]
+  (cond
+    (= key-code Input$Keys/F1) (.toggleShow (:hud @state))
+    (and (ctrl-pressed? state) (= key-code Input$Keys/R)) (reset-state! state)
+    (and (ctrl-pressed? state) (= key-code Input$Keys/H)) (toggle-active state))
   (swap! state (fn [state] (assoc-in state [:keys-pressed key-code] true))))
 
-(defn key-typed [state ch]
-  (when (= ch \h)
-    (swap! state (fn [state] (update state :active? not)))))
+(defn key-typed [state ch])
 
 (defn key-up [state key-code]
   (swap! state (fn [state] (assoc-in state [:keys-pressed key-code] false))))

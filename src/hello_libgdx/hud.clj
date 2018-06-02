@@ -1,4 +1,4 @@
-(ns hello-libgdx.frame-rate
+(ns hello-libgdx.hud
   (:import [com.badlogic.gdx Gdx]
            [com.badlogic.gdx.graphics Color OrthographicCamera]
            [com.badlogic.gdx.graphics.g2d BitmapFont GlyphLayout SpriteBatch]
@@ -6,7 +6,7 @@
   (:require [clojure.pprint :refer [print-table]]
             [clojure.reflect :as r]))
 
-(gen-class :name hello-libgdx.FrameRate
+(gen-class :name hello-libgdx.Hud
            :implements [com.badlogic.gdx.utils.Disposable]
            :state state
            :init init

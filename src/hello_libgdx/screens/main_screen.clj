@@ -45,7 +45,7 @@
                :camera         (OrthographicCamera. (.getWidth Gdx/graphics)
                                                     (.getHeight Gdx/graphics))
                :stage          (Stage.)
-               :frame-rate     (hello-libgdx.FrameRate.)}
+               :hud            (hello-libgdx.Hud.)}
         stage (:stage state)
         style (Label$LabelStyle. (BitmapFont.) (Color. 1 1 1 1))
         label (doto (Label. "hello, libgdx!" style)
@@ -94,7 +94,7 @@
   (let [state @(.state this)]
     ;; (.setToOrtho camera false (float width) (float height))
     ;; (.update camera)
-    (.resize (:frame-rate state) width height)))
+    (.resize (:hud state) width height)))
 
 (defn- draw-rect [renderer size]
   (.rect renderer
@@ -201,7 +201,7 @@
         (.act delta)
         (.draw))
       (update-state (.state this) delta))
-    (.render (:frame-rate state))))
+    (.render (:hud state))))
 
 (defn -pause [this])
 

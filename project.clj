@@ -16,7 +16,10 @@
                  [org.clojure/clojure "1.8.0"]]
   :source-paths ["src"]
   :javac-options ["-target" "1.8" "-source" "1.8" "-Xlint:-options"]
-  :aot [hello-libgdx.core.desktop-launcher]
+  :aot [hello-libgdx.hud
+        hello-libgdx.screens.main-screen
+        hello-libgdx.core
+        hello-libgdx.core.desktop-launcher]
   :main hello-libgdx.core.desktop-launcher
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

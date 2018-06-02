@@ -24,5 +24,4 @@
         hello-libgdx.core
         hello-libgdx.core.desktop-launcher]
   :main hello-libgdx.core.desktop-launcher
-  :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}})
+  :target-path "target/%s")

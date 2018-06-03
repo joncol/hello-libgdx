@@ -102,7 +102,6 @@
      :world-height  (.getHeight Gdx/graphics)
      :camera        camera
      :environment   env
-     :stage         (Stage.)
      :hud           (hello-libgdx.Hud.)}))
 
 (defn -init []
@@ -358,9 +357,6 @@
         (render-text state "hello, libGDX!")
         (render-cube state)
         (render-rects state)
-        (doto (:stage state)
-          (.act delta)
-          (.draw))
         (update-state (.state this) delta))
       (.render (:hud state)))
     (catch Exception e

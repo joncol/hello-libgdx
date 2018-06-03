@@ -5,8 +5,14 @@
             Game Gdx Graphics Input Input$Keys InputProcessor Screen]
            [com.badlogic.gdx.graphics
             Color GL20 OrthographicCamera PerspectiveCamera Texture
-            Texture$TextureFilter]
+            Texture$TextureFilter VertexAttributes VertexAttributes$Usage]
            [com.badlogic.gdx.graphics.g2d BitmapFont GlyphLayout SpriteBatch]
+           [com.badlogic.gdx.graphics.g3d
+            Attribute Environment Material Model ModelBatch ModelInstance]
+           [com.badlogic.gdx.graphics.g3d.attributes
+            BlendingAttribute ColorAttribute]
+           [com.badlogic.gdx.graphics.g3d.environment DirectionalLight]
+           [com.badlogic.gdx.graphics.g3d.utils ModelBuilder]
            [com.badlogic.gdx.graphics.glutils
             ShapeRenderer ShapeRenderer$ShapeType]
            [com.badlogic.gdx.math Matrix4 Vector3]
@@ -51,35 +57,52 @@
   (Color. r g b (or a 1.0)))
 
 (defn- initial-state []
-  (let [camera (PerspectiveCamera.
-                45
-                (.getWidth Gdx/graphics)
-                (.getHeight Gdx/graphics))]
+  (let [camera     (PerspectiveCamera.
+                    45
+                    (.getWidth Gdx/graphics)
+                    (.getHeight Gdx/graphics))
+        cube-size  25
+        attrs [(ColorAttribute/createDiffuse (->Color (conj green1 0.25)))
+               (BlendingAttribute. GL20/GL_SRC_ALPHA
+                                   GL20/GL_ONE_MINUS_SRC_ALPHA)]
+        cube-model (.createBox
+                    (ModelBuilder.) cube-size cube-size cube-size
+                    (Material. (into-array Attribute attrs))
+                    (bit-or VertexAttributes$Usage/Position
+                            VertexAttributes$Usage/Normal))
+        env        (Environment.)]
     (.. camera -position (set 0.0 0.0 10.0))
     (.lookAt camera 0 0 0)
     (set! (.near camera) 0.001)
     (set! (.far camera) 10000.0)
-    {:active?        true
-     :font           (generate-font "fonts/AbrilFatface-Regular.ttf"
-                                    #_"fonts/UbuntuMono-Regular.ttf"
-                                    :size 100
-                                    :color (->Color red4)
-                                    :shadow-offset-x 6
-                                    :shadow-offset-y 6
-                                    :shadow-color (Color. 0 0 0 0.25))
-     :rect-pos       [0 0]
-     :rect-size      250
-     :cube-size      25
-     :angle1         0
-     :angle2         0
-     :angle3         0
-     :angle4         0
-     :angle5         0
-     :world-width    (.getWidth Gdx/graphics)
-     :world-height   (.getHeight Gdx/graphics)
-     :camera         camera
-     :stage          (Stage.)
-     :hud            (hello-libgdx.Hud.)}))
+    (.set env (ColorAttribute. ColorAttribute/AmbientLight
+                               (float 0.4) (float 0.4) (float 0.4) (float 1)))
+    (.add env (doto (DirectionalLight.)
+                (.set (float 0.8) (float 0.8) (float 0.8)
+                      (float -1) (float -0.8) (float -10))))
+    {:active?       true
+     :font          (generate-font "fonts/AbrilFatface-Regular.ttf"
+                                   #_"fonts/UbuntuMono-Regular.ttf"
+                                   :size 100
+                                   :color Color/WHITE
+                                   :shadow-offset-x 6
+                                   :shadow-offset-y 6
+                                   :shadow-color (Color. 0 0 0 0))
+     :rect-pos      [0 0]
+     :rect-size     10
+     :cube-model    cube-model
+     :cube-instance (ModelInstance. cube-model)
+     :angle1        0
+     :angle2        0
+     :angle3        0
+     :angle4        0
+     :angle5        0
+     :world-width   (.getWidth Gdx/graphics)
+     :world-height  (.getHeight Gdx/graphics)
+     :camera        camera
+     :environment   env
+     :stage         (Stage.)
+     :hud           (hello-libgdx.Hud.)}))
 
 (defn -init []
   [[] (atom (initial-state))])
@@ -226,7 +249,7 @@
         (.end renderer)))))
 
 (defn- render-cube [state]
-  (let [renderer  (ShapeRenderer.)
+  (let [batch     (ModelBatch.)
         [x y]     (:rect-pos state)
         cube-size (:cube-size state)
         a1        (:angle1 state)
@@ -236,27 +259,28 @@
         a5        (:angle5 state)]
     (try
       (.update (:camera state) true)
-      (.glEnable (Gdx/gl) GL20/GL_BLEND)
-      (.glBlendFunc (Gdx/gl) GL20/GL_SRC_ALPHA GL20/GL_ONE_MINUS_SRC_ALPHA)
-      (.glLineWidth (Gdx/gl) 8.0)
-      (doto renderer
-        (.setProjectionMatrix (.combined (:camera state)))
-        (.begin ShapeRenderer$ShapeType/Line)
-        (set-color (conj green3 0.25))
-        .identity
-        (.translate -80 20 -150)
-        (.rotate 1 0 0 (* 10 (Math/sin a1) (Math/sin a2)
-                          (Math/sin a3)))
-        (.rotate 0 1 0 (* 10 (Math/sin a3) (Math/sin a5)
-                          (Math/sin a3)))
-        (.rotate 0 0 1 (* 10 (Math/sin a4) (Math/sin a3)
-                          (Math/sin a3)))
-        (draw-cube cube-size))
+      (.. (:cube-instance state)
+          -transform
+          idt)
+      (.. (:cube-instance state)
+          -transform
+          (translate (float 0)
+                     (float 0)
+                     (float -100))
+          (rotate 1 0 0 (* 90 (Math/sin a1) (Math/sin a2)
+                           (Math/sin a3)))
+          (rotate 0 1 0 (* 10 (Math/sin a3) (Math/sin a5)
+                           (Math/sin a3)))
+          (rotate 0 0 1 (* 90 (Math/sin a4) (Math/sin a3)
+                           (Math/sin a3))))
+      (doto batch
+        (.begin (:camera state))
+        (.render (:cube-instance state)
+                 (:environment state)))
       (catch Exception e
         (prn e))
       (finally
-        (.end renderer)
-        (.glDisable (Gdx/gl) GL20/GL_BLEND)))))
+        (.end batch)))))
 
 (defn- render-text [state text]
   (let [font         (:font state)
@@ -310,9 +334,9 @@
                  (update :angle3 #(+ % (* delta 0.85)))
                  (update :angle4 #(+ % (* delta 0.35)))
                  (update :angle5 #(+ % (* delta 0.95)))
-                 (assoc :rect-pos [(* 200 (Math/sin a1) (Math/sin a2) 0.25)
-                                   (* 100 (Math/sin a1) (Math/sin a3) 0.25)])
-                 (assoc :rect-size (+ 75 (* 50 (Math/sin a1)))))))))
+                 (assoc :rect-pos [(* 400 (Math/sin a1) (Math/sin a2) 0.25)
+                                   (* 300 (Math/sin a1) (Math/sin a3) 0.25)])
+                 (assoc :rect-size (+ 50 (* 25 (Math/sin a1)))))))))
 
 (defn -render [this delta]
   (try
@@ -325,9 +349,9 @@
                           GL20/GL_COVERAGE_BUFFER_BIT_NV
                           0)))
       (when (:active? state)
-        (render-rects state)
         (render-text state "hello, libGDX!")
         (render-cube state)
+        (render-rects state)
         (doto (:stage state)
           (.act delta)
           (.draw))

@@ -266,8 +266,14 @@
         idt)
     (.. (:cube-instance state)
         -transform
-        (translate (float 0)
-                   (float 0)
+        (translate (float (* 50
+                             (Math/sin a1)
+                             (Math/sin a3)
+                             (Math/sin a5)))
+                   (float (* 30
+                             (Math/sin a2)
+                             (Math/sin a3)
+                             (Math/sin a4)))
                    (float -100))
         (rotate 1 0 0 (* 90 (Math/sin a1) (Math/sin a2)
                          (Math/sin a3)))

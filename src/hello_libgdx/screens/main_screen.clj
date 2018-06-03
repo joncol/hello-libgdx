@@ -206,52 +206,49 @@
         a5        (:angle5 state)]
     (with-disposable [renderer (ShapeRenderer.)]
       (try
-        (doto renderer
-          (.setProjectionMatrix (.combined (:camera state)))
-          (.begin ShapeRenderer$ShapeType/Filled)
-          (set-color yellow2)
-          .identity
-          (.translate x y z)
-          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-          (draw-rect rect-size)
+        (let [m (doto (Matrix4.)
+                  (.translate x y z)
+                  (.rotate 0 0 1 (* 180
+                                    (Math/sin a1)
+                                    (Math/sin a2)
+                                    (Math/sin a3))))]
+          (doto renderer
+            (.setProjectionMatrix (.combined (:camera state)))
 
-          (set-color cyan1)
-          .identity
-          (.translate x y z)
-          (.rotate 0 0 1 (* 180.0 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-          (.translate (- (/ rect-size 2)) (- (/ rect-size 2)) 0)
-          (.rotate 0 0 1 (* 90 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-          (draw-rect (/ rect-size 4))
+            (.begin ShapeRenderer$ShapeType/Filled)
+            (set-color yellow2)
+            (.setTransformMatrix m)
+            (draw-rect rect-size)
 
-          (set-color cyan2)
-          .identity
-          (.translate x y z)
-          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-          (.translate (/ rect-size 2) (- (/ rect-size 2)) 0)
-          (.rotate 0 0 1 (* 180 (Math/sin a3) (Math/sin a4) (Math/sin a5)))
-          (draw-rect (/ rect-size 4))
+            (set-color cyan1)
+            (.setTransformMatrix m)
+            (.translate (- (/ rect-size 2)) (- (/ rect-size 2)) 0)
+            (.rotate 0 0 1 (* 90 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+            (draw-rect (/ rect-size 4))
 
-          (set-color cyan3)
-          .identity
-          (.translate x y z)
-          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-          (.translate (/ rect-size 2) (/ rect-size 2) 0)
-          (.rotate 0 0 1 (* 270 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-          (draw-rect (/ rect-size 4))
+            (set-color cyan2)
+            (.setTransformMatrix m)
+            (.translate (/ rect-size 2) (- (/ rect-size 2)) 0)
+            (.rotate 0 0 1 (* 180 (Math/sin a3) (Math/sin a4) (Math/sin a5)))
+            (draw-rect (/ rect-size 4))
 
-          (set-color cyan4)
-          .identity
-          (.translate x y z)
-          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-          (.translate (- (/ rect-size 2)) (/ rect-size 2) 0)
-          (.rotate 0 0 1 (* 360 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-          (draw-rect (/ rect-size 4))
+            (set-color cyan3)
+            (.setTransformMatrix m)
+            (.translate (/ rect-size 2) (/ rect-size 2) 0)
+            (.rotate 0 0 1 (* 270 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+            (draw-rect (/ rect-size 4))
 
-          (set-color red2)
-          .identity
-          (.translate x y z)
-          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a5)))
-          (draw-rect (/ rect-size 2)))
+            (set-color cyan4)
+            (.setTransformMatrix m)
+            (.translate (- (/ rect-size 2)) (/ rect-size 2) 0)
+            (.rotate 0 0 1 (* 360 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+            (draw-rect (/ rect-size 4))
+
+            (set-color red2)
+            .identity
+            (.translate x y z)
+            (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a5)))
+            (draw-rect (/ rect-size 2))))
         (finally
           (.end renderer))))))
 

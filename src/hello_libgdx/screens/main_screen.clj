@@ -63,7 +63,7 @@
                     (.getWidth Gdx/graphics)
                     (.getHeight Gdx/graphics))
         cube-size  25
-        attrs [(ColorAttribute/createDiffuse (->Color (conj green1 0.25)))
+        attrs [(ColorAttribute/createDiffuse (->Color (conj red4 0.85)))
                (BlendingAttribute. GL20/GL_SRC_ALPHA
                                    GL20/GL_ONE_MINUS_SRC_ALPHA)]
         cube-model (.createBox
@@ -90,7 +90,7 @@
                                    :shadow-offset-y 6
                                    :shadow-color (Color. 0 0 0 0))
      :rect-pos      [0 0]
-     :rect-size     10
+     :rect-size     50
      :cube-model    cube-model
      :cube-instance (ModelInstance. cube-model)
      :angle1        0

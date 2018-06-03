@@ -1,6 +1,6 @@
 (ns hello-libgdx.screens.main-screen
   (:require [hello-libgdx.font-generator :refer [generate-font]]
-            [hello-libgdx.util :refer [print-object-fields]])
+            [hello-libgdx.util :refer [print-object-fields with-disposable]])
   (:import [com.badlogic.gdx
             Game Gdx Graphics Input Input$Keys InputProcessor Screen]
            [com.badlogic.gdx.graphics
@@ -18,10 +18,11 @@
            [com.badlogic.gdx.math Matrix4 Vector3]
            com.badlogic.gdx.scenes.scene2d.Stage
            [com.badlogic.gdx.scenes.scene2d.ui Label Label$LabelStyle]
-           com.badlogic.gdx.utils.Align))
+           [com.badlogic.gdx.utils Align Disposable]))
 
 (gen-class :name hello-libgdx.screens.main-screen.MainScreen
-           :implements [com.badlogic.gdx.Screen]
+           :implements [com.badlogic.gdx.Screen
+                        com.badlogic.gdx.utils.Disposable]
            :state state
            :init init)
 
@@ -107,8 +108,17 @@
 (defn -init []
   [[] (atom (initial-state))])
 
+(defn dispose-state [state]
+  (doseq [obj (-> state (select-keys [:font :cube-model :hud]) vals)]
+    (when obj
+      (.dispose obj))))
+
+(defn -dispose [this]
+  (dispose-state @(.state this)))
+
 (defn reset-state! [state]
   (try
+    (dispose-state @state)
     (swap! state #(merge (initial-state) (select-keys % [:keys-pressed])))
     (catch Exception e
       (prn e))))
@@ -187,8 +197,7 @@
   (.setColor renderer r g b (or a 1.0)))
 
 (defn- render-rects [state]
-  (let [renderer  (ShapeRenderer.)
-        [x y]     (:rect-pos state)
+  (let [[x y]     (:rect-pos state)
         z         -250
         rect-size (:rect-size state)
         a1        (:angle1 state)
@@ -196,131 +205,128 @@
         a3        (:angle3 state)
         a4        (:angle4 state)
         a5        (:angle5 state)]
-    (try
-      (doto renderer
-        (.setProjectionMatrix (.combined (:camera state)))
-        (.begin ShapeRenderer$ShapeType/Filled)
-        (set-color yellow2)
-        .identity
-        (.translate x y z)
-        (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-        (draw-rect rect-size)
+    (with-disposable [renderer (ShapeRenderer.)]
+      (try
+        (doto renderer
+          (.setProjectionMatrix (.combined (:camera state)))
+          (.begin ShapeRenderer$ShapeType/Filled)
+          (set-color yellow2)
+          .identity
+          (.translate x y z)
+          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
+          (draw-rect rect-size)
 
-        (set-color cyan1)
-        .identity
-        (.translate x y z)
-        (.rotate 0 0 1 (* 180.0 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-        (.translate (- (/ rect-size 2)) (- (/ rect-size 2)) 0)
-        (.rotate 0 0 1 (* 90 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-        (draw-rect (/ rect-size 4))
+          (set-color cyan1)
+          .identity
+          (.translate x y z)
+          (.rotate 0 0 1 (* 180.0 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
+          (.translate (- (/ rect-size 2)) (- (/ rect-size 2)) 0)
+          (.rotate 0 0 1 (* 90 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+          (draw-rect (/ rect-size 4))
 
-        (set-color cyan2)
-        .identity
-        (.translate x y z)
-        (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-        (.translate (/ rect-size 2) (- (/ rect-size 2)) 0)
-        (.rotate 0 0 1 (* 180 (Math/sin a3) (Math/sin a4) (Math/sin a5)))
-        (draw-rect (/ rect-size 4))
+          (set-color cyan2)
+          .identity
+          (.translate x y z)
+          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
+          (.translate (/ rect-size 2) (- (/ rect-size 2)) 0)
+          (.rotate 0 0 1 (* 180 (Math/sin a3) (Math/sin a4) (Math/sin a5)))
+          (draw-rect (/ rect-size 4))
 
-        (set-color cyan3)
-        .identity
-        (.translate x y z)
-        (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-        (.translate (/ rect-size 2) (/ rect-size 2) 0)
-        (.rotate 0 0 1 (* 270 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-        (draw-rect (/ rect-size 4))
+          (set-color cyan3)
+          .identity
+          (.translate x y z)
+          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
+          (.translate (/ rect-size 2) (/ rect-size 2) 0)
+          (.rotate 0 0 1 (* 270 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+          (draw-rect (/ rect-size 4))
 
-        (set-color cyan4)
-        .identity
-        (.translate x y z)
-        (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
-        (.translate (- (/ rect-size 2)) (/ rect-size 2) 0)
-        (.rotate 0 0 1 (* 360 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-        (draw-rect (/ rect-size 4))
+          (set-color cyan4)
+          .identity
+          (.translate x y z)
+          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a3)))
+          (.translate (- (/ rect-size 2)) (/ rect-size 2) 0)
+          (.rotate 0 0 1 (* 360 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+          (draw-rect (/ rect-size 4))
 
-        (set-color red2)
-        .identity
-        (.translate x y z)
-        (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a5)))
-        (draw-rect (/ rect-size 2)))
-      (catch Exception e
-        (prn e))
-      (finally
-        (.end renderer)))))
+          (set-color red2)
+          .identity
+          (.translate x y z)
+          (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a5)))
+          (draw-rect (/ rect-size 2)))
+        (finally
+          (.end renderer))))))
 
 (defn- render-cube [state]
-  (let [batch     (ModelBatch.)
-        [x y]     (:rect-pos state)
+  (let [[x y]     (:rect-pos state)
         cube-size (:cube-size state)
         a1        (:angle1 state)
         a2        (:angle2 state)
         a3        (:angle3 state)
         a4        (:angle4 state)
         a5        (:angle5 state)]
-    (try
-      (.update (:camera state) true)
-      (.. (:cube-instance state)
-          -transform
-          idt)
-      (.. (:cube-instance state)
-          -transform
-          (translate (float 0)
-                     (float 0)
-                     (float -100))
-          (rotate 1 0 0 (* 90 (Math/sin a1) (Math/sin a2)
-                           (Math/sin a3)))
-          (rotate 0 1 0 (* 10 (Math/sin a3) (Math/sin a5)
-                           (Math/sin a3)))
-          (rotate 0 0 1 (* 90 (Math/sin a4) (Math/sin a3)
-                           (Math/sin a3))))
-      (doto batch
-        (.begin (:camera state))
-        (.render (:cube-instance state)
-                 (:environment state)))
-      (catch Exception e
-        (prn e))
-      (finally
-        (.end batch)))))
+    (.update (:camera state) true)
+    (.. (:cube-instance state)
+        -transform
+        idt)
+    (.. (:cube-instance state)
+        -transform
+        (translate (float 0)
+                   (float 0)
+                   (float -100))
+        (rotate 1 0 0 (* 90 (Math/sin a1) (Math/sin a2)
+                         (Math/sin a3)))
+        (rotate 0 1 0 (* 10 (Math/sin a3) (Math/sin a5)
+                         (Math/sin a3)))
+        (rotate 0 0 1 (* 90 (Math/sin a4) (Math/sin a3)
+                         (Math/sin a3))))
+    (with-disposable [batch (ModelBatch.)]
+      (try
+        (doto batch
+          (.begin (:camera state))
+          (.render (:cube-instance state)
+                   (:environment state)))
+        (finally
+          (.end batch))))))
 
 (defn- render-text [state text]
   (let [font         (:font state)
-        glyph-layout (GlyphLayout. font text)
-        w            (.-width glyph-layout)
-        h            (.-height glyph-layout)
-        batch        (SpriteBatch.)
-        a1           (:angle1 state)
-        a2           (:angle2 state)
-        a3           (:angle3 state)
-        a4           (:angle4 state)
-        a5           (:angle5 state)]
-    (try
-      (.begin batch)
-      (let [m (doto (Matrix4.)
-                (.setToTranslation (float (/ (.getWidth Gdx/graphics) 2))
-                                   (float (/ (.getHeight Gdx/graphics) 2))
-                                   (float 0))
-                (.mul (doto (Matrix4.)
-                        (.setToRotation (Vector3. 0 0 1)
-                                        (* 45
-                                           (Math/sin (float a1))
-                                           (Math/sin (float a2))
-                                           (Math/sin (float a3))
-                                           (Math/sin (float a4))
-                                           (Math/sin (float a5))))))
-                (.mul (doto (Matrix4.)
-                        (.setToTranslation
-                         (float (- (/ w 2)))
-                         (float (/ h 2))
-                         (float 0)))))]
-        (.setTransformMatrix batch m))
-      (.setFilter (.. font getRegion getTexture)
-                  Texture$TextureFilter/Linear
-                  Texture$TextureFilter/Linear)
-      (.draw font batch glyph-layout (float 0) (float 0))
-      (catch Exception e
-        (prn e))
-      (finally
-        (.end batch)))))
+        glyph-layout (GlyphLayout. font text)]
+    (with-disposable [batch (SpriteBatch.)]
+      (try
+        (.begin batch)
+        (let [w  (.-width glyph-layout)
+              h  (.-height glyph-layout)
+              a1 (:angle1 state)
+              a2 (:angle2 state)
+              a3 (:angle3 state)
+              a4 (:angle4 state)
+              a5 (:angle5 state)
+              m  (doto (Matrix4.)
+                   (.setToTranslation (float (/ (.getWidth Gdx/graphics) 2))
+                                      (float (/ (.getHeight Gdx/graphics) 2))
+                                      (float 0))
+                   (.mul (doto (Matrix4.)
+                           (.setToRotation (Vector3. 0 0 1)
+                                           (* 45
+                                              (Math/sin (float a1))
+                                              (Math/sin (float a2))
+                                              (Math/sin (float a3))
+                                              (Math/sin (float a4))
+                                              (Math/sin (float a5))))))
+                   (.mul (doto (Matrix4.)
+                           (.setToTranslation
+                            (float (- (/ w 2)))
+                            (float (/ h 2))
+                            (float 0)))))]
+          (.setTransformMatrix batch m))
+        (.setFilter (.. font getRegion getTexture)
+                    Texture$TextureFilter/Linear
+                    Texture$TextureFilter/Linear)
+        (.draw font batch glyph-layout (float 0) (float 0))
+        (catch Exception e
+          (prn e))
+        (finally
+          (.end batch))))))
 
 (defn- update-state [state delta]
   (swap! state

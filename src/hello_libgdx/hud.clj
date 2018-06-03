@@ -16,22 +16,29 @@
                      [hide [] void]
                      [toggleShow [] void]])
 
-(defn -dispose [this]
-  (let [state @(.state this)]
-    (.dispose (:batch state))
-    (.dispose (:font state))
-    (.dispose (:glyph-layout state))
-    (.dispose (:camera state))))
-
 (defn -init []
-  [[] (atom {:active       true
-             :batch        (SpriteBatch.)
-             :font         (generate-font "fonts/UbuntuMono-Regular.ttf"'
-                                          :size 20)
-             :glyph-layout (GlyphLayout.)
-             :camera       (OrthographicCamera.
-                            (.getWidth Gdx/graphics)
-                            (.getHeight Gdx/graphics))})])
+  [[] (atom {:active    true
+             :batch     (SpriteBatch.)
+             :font      (generate-font "fonts/UbuntuMono-Regular.ttf"'
+                                       :size 20)
+             :camera    (OrthographicCamera.
+                         (.getWidth Gdx/graphics)
+                         (.getHeight Gdx/graphics))
+             :shortcuts (with-out-str
+                          (print-table
+                           ["Key" "Function"]
+                           [{"Key" "F1" "Function" "Toggle HUD"}
+                            {"Key" "C-h" "Function" "Toggle screen"}
+                            {"Key" "C-r" "Function" "Reset state"}
+                            {"Key" "C-q" "Function" "Quit"}]))})])
+
+(defn dispose-state [state]
+  (doseq [obj (-> state (select-keys [:batch :font]) vals)]
+    (when obj
+      (.dispose obj))))
+
+(defn -dispose [this]
+  (dispose-state @(.state this)))
 
 (defn -resize [this width height]
   (let [state  @(.state this)
@@ -42,17 +49,12 @@
 
 (defn -render [this]
   (when (:active @(.state this))
-    (let [state     @(.state this)
-          fps       (str (int (.getFramesPerSecond Gdx/graphics)) " fps")
-          shortcuts (with-out-str
-                      (print-table ["Key" "Function"]
-                                   [{"Key" "F1" "Function" "Toggle HUD"}
-                                    {"Key" "C-h" "Function" "Toggle screen"}
-                                    {"Key" "C-r" "Function" "Reset state"}
-                                    {"Key" "C-q" "Function" "Quit"}]))]
-      (.setText (:glyph-layout state) (:font state) (str fps "\n" shortcuts))
+    (let [state        @(.state this)
+          fps          (str (int (.getFramesPerSecond Gdx/graphics)) " fps")
+          glyph-layout (GlyphLayout.)]
+      (.setText glyph-layout (:font state) (str fps "\n" (:shortcuts state)))
       (.begin (:batch state))
-      (.draw (:font state) (:batch state) (:glyph-layout state)
+      (.draw (:font state) (:batch state) glyph-layout
              (float 16) (float (- (.getHeight Gdx/graphics) 16)))
       (.end (:batch state)))))
 

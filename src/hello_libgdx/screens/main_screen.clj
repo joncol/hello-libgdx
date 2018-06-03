@@ -74,7 +74,11 @@
                     (bit-or VertexAttributes$Usage/Position
                             VertexAttributes$Usage/Normal))
         env        (Environment.)
-        colors     [red3 yellow2 cyan2 cyan4 blue2 blue1 green2 green3]]
+        colors      [yellow1 yellow2 yellow3 yellow4
+                     red1 red2 red3 red4
+                     blue1 blue2 blue3 blue4
+                     cyan1 cyan2 cyan3 cyan4
+                     green1 green2 green3 green4]]
     (.. camera -position (set 0.0 0.0 10.0))
     (.lookAt camera 0 0 0)
     (set! (.near camera) 0.1)

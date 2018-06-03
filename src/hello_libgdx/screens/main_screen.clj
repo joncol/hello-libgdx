@@ -63,9 +63,9 @@
                     (.getWidth Gdx/graphics)
                     (.getHeight Gdx/graphics))
         cube-size  25
-        attrs [(ColorAttribute/createDiffuse (->Color (conj red4 0.85)))
-               (BlendingAttribute. GL20/GL_SRC_ALPHA
-                                   GL20/GL_ONE_MINUS_SRC_ALPHA)]
+        attrs      [(ColorAttribute/createDiffuse (->Color (conj red4 0.85)))
+                    (BlendingAttribute. GL20/GL_SRC_ALPHA
+                                        GL20/GL_ONE_MINUS_SRC_ALPHA)]
         cube-model (.createBox
                     (ModelBuilder.) cube-size cube-size cube-size
                     (Material. (into-array Attribute attrs))

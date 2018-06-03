@@ -56,52 +56,58 @@
 (defn- ->Color [[r g b & [a]]]
   (Color. r g b (or a 1.0)))
 
+(defn- material [^Color color]
+  (let [attrs [(ColorAttribute/createDiffuse color)
+               (BlendingAttribute. GL20/GL_SRC_ALPHA
+                                   GL20/GL_ONE_MINUS_SRC_ALPHA)]]
+    (Material. (into-array Attribute attrs))))
+
 (defn- initial-state []
   (let [camera     (PerspectiveCamera.
                     45
                     (.getWidth Gdx/graphics)
                     (.getHeight Gdx/graphics))
-        cube-size  25
-        attrs      [(ColorAttribute/createDiffuse (->Color (conj red4 0.85)))
-                    (BlendingAttribute. GL20/GL_SRC_ALPHA
-                                        GL20/GL_ONE_MINUS_SRC_ALPHA)]
+        cube-size  15
         cube-model (.createBox
                     (ModelBuilder.) cube-size cube-size cube-size
-                    (Material. (into-array Attribute attrs))
+                    (material (->Color (conj red4 0.75)))
                     (bit-or VertexAttributes$Usage/Position
                             VertexAttributes$Usage/Normal))
-        env        (Environment.)]
+        env        (Environment.)
+        colors     [red3 yellow2 cyan2 cyan4 blue2 blue1 green2 green3]]
     (.. camera -position (set 0.0 0.0 10.0))
     (.lookAt camera 0 0 0)
-    (set! (.near camera) 0.001)
-    (set! (.far camera) 10000.0)
+    (set! (.near camera) 0.1)
+    (set! (.far camera) 500.0)
     (.set env (ColorAttribute. ColorAttribute/AmbientLight
                                (float 0.4) (float 0.4) (float 0.4) (float 1)))
     (.add env (doto (DirectionalLight.)
                 (.set (float 0.8) (float 0.8) (float 0.8)
                       (float -1) (float -0.8) (float -10))))
-    {:active?       true
-     :font          (generate-font "fonts/AbrilFatface-Regular.ttf"
-                                   #_"fonts/UbuntuMono-Regular.ttf"
-                                   :size 100
-                                   :color Color/WHITE
-                                   :shadow-offset-x 6
-                                   :shadow-offset-y 6
-                                   :shadow-color (Color. 0 0 0 0))
-     :rect-pos      [0 0]
-     :rect-size     50
-     :cube-model    cube-model
-     :cube-instance (ModelInstance. cube-model)
-     :angle1        0
-     :angle2        0
-     :angle3        0
-     :angle4        0
-     :angle5        0
-     :world-width   (.getWidth Gdx/graphics)
-     :world-height  (.getHeight Gdx/graphics)
-     :camera        camera
-     :environment   env
-     :hud           (hello-libgdx.Hud.)}))
+    {:active?      true
+     :font         (generate-font "fonts/AbrilFatface-Regular.ttf"
+                                  #_"fonts/UbuntuMono-Regular.ttf"
+                                  :size 100
+                                  :color Color/WHITE
+                                  :shadow-offset-x 6
+                                  :shadow-offset-y 6
+                                  :shadow-color (Color. 0 0 0 0))
+     :rect-pos     [0 0]
+     :rect-size    50
+     :cube-model   cube-model
+     :colors       (repeatedly #(rand-nth colors))
+     :angle1       0
+     :angle2       0
+     :angle3       0
+     :angle4       0
+     :angle5       0
+     :angles       (repeat 0)
+     :angle-count  5
+     :world-width  (.getWidth Gdx/graphics)
+     :world-height (.getHeight Gdx/graphics)
+     :camera       camera
+     :environment  env
+     :hud          (hello-libgdx.Hud.)}))
 
 (defn -init []
   [[] (atom (initial-state))])
@@ -251,41 +257,59 @@
         (finally
           (.end renderer))))))
 
-(defn- render-cube [state]
-  (let [[x y]     (:rect-pos state)
-        cube-size (:cube-size state)
-        a1        (:angle1 state)
+(defn- set-material-color [^ModelInstance instance ^Color color]
+  (let [node-part (.. instance -nodes (get 0) parts (get 0))
+        mat       (.material node-part)]
+    (.set mat (ColorAttribute/createDiffuse color))))
+
+(defn- transform-instance [^ModelInstance inst state angle-offset]
+  (let [a1        (:angle1 state)
         a2        (:angle2 state)
         a3        (:angle3 state)
         a4        (:angle4 state)
         a5        (:angle5 state)]
-    (.update (:camera state) true)
-    (.. (:cube-instance state)
+    (.. inst
         -transform
-        idt)
-    (.. (:cube-instance state)
-        -transform
+        idt
         (translate (float (* 50
-                             (Math/sin a1)
-                             (Math/sin a3)
-                             (Math/sin a5)))
+                             (Math/sin (+ angle-offset a1))
+                             (Math/sin (+ angle-offset a3))
+                             (Math/sin (+ angle-offset a5))))
                    (float (* 30
-                             (Math/sin a2)
-                             (Math/sin a3)
-                             (Math/sin a4)))
-                   (float -100))
-        (rotate 1 0 0 (* 90 (Math/sin a1) (Math/sin a2)
-                         (Math/sin a3)))
-        (rotate 0 1 0 (* 10 (Math/sin a3) (Math/sin a5)
-                         (Math/sin a3)))
-        (rotate 0 0 1 (* 90 (Math/sin a4) (Math/sin a3)
-                         (Math/sin a3))))
+                             (Math/sin (+ angle-offset a2))
+                             (Math/sin (+ angle-offset a3))
+                             (Math/sin (+ angle-offset a4))))
+                   (float (- (* 80
+                                (Math/sin (+ angle-offset a1))
+                                (Math/sin (+ angle-offset a2))
+                                (Math/sin (+ angle-offset a4))) 150)))
+        (rotate 1 0 0 (* 90
+                         (Math/sin (+ angle-offset a1))
+                         (Math/sin (+ angle-offset a2))
+                         (Math/sin (+ angle-offset a3))))
+        (rotate 0 1 0 (* 10
+                         (Math/sin (+ angle-offset a3))
+                         (Math/sin (+ angle-offset a5))
+                         (Math/sin (+ angle-offset a3))))
+        (rotate 0 0 1 (* 90
+                         (Math/sin (+ angle-offset a4))
+                         (Math/sin (+ angle-offset a3))
+                         (Math/sin (+ angle-offset a3)))))))
+
+(defn- render-cubes [state]
+  (let [cube-count 8
+        instances  (vec (repeatedly cube-count
+                                    #(ModelInstance. (:cube-model state))))
+        colors     (vec (take cube-count (:colors state)))]
+    (dotimes [i (count instances)]
+      (let [inst (get instances i)]
+        (transform-instance inst state (* i (/ Math/PI cube-count)))
+        (set-material-color inst (->Color (conj (nth colors i) 0.85)))))
     (with-disposable [batch (ModelBatch.)]
       (try
-        (doto batch
-          (.begin (:camera state))
-          (.render (:cube-instance state)
-                   (:environment state)))
+        (.begin batch (:camera state))
+        (doseq [inst instances]
+          (.render batch inst (:environment state)))
         (finally
           (.end batch))))))
 
@@ -355,8 +379,8 @@
                           0)))
       (when (:active? state)
         (render-text state "hello, libGDX!")
-        (render-cube state)
         (render-rects state)
+        (render-cubes state)
         (update-state (.state this) delta))
       (.render (:hud state)))
     (catch Exception e

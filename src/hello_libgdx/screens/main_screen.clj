@@ -302,25 +302,23 @@
               a2 (:angle2 state)
               a3 (:angle3 state)
               a4 (:angle4 state)
-              a5 (:angle5 state)
-              m  (doto (Matrix4.)
-                   (.setToTranslation (float (/ (.getWidth Gdx/graphics) 2))
-                                      (float (/ (.getHeight Gdx/graphics) 2))
-                                      (float 0))
-                   (.mul (doto (Matrix4.)
-                           (.setToRotation (Vector3. 0 0 1)
-                                           (* 45
-                                              (Math/sin (float a1))
-                                              (Math/sin (float a2))
-                                              (Math/sin (float a3))
-                                              (Math/sin (float a4))
-                                              (Math/sin (float a5))))))
-                   (.mul (doto (Matrix4.)
-                           (.setToTranslation
-                            (float (- (/ w 2)))
-                            (float (/ h 2))
-                            (float 0)))))]
-          (.setTransformMatrix batch m))
+              a5 (:angle5 state)]
+          (.setTransformMatrix
+           batch
+           (doto (Matrix4.)
+             (.translate (float (/ (.getWidth Gdx/graphics) 2))
+                         (float (/ (.getHeight Gdx/graphics) 2))
+                         (float 0))
+             (.rotate (Vector3. 0 0 1)
+                      (* 45
+                         (Math/sin (float a1))
+                         (Math/sin (float a2))
+                         (Math/sin (float a3))
+                         (Math/sin (float a4))
+                         (Math/sin (float a5))))
+             (.translate (float (- (/ w 2)))
+                         (float (/ h 2))
+                         (float 0)))))
         (.setFilter (.. font getRegion getTexture)
                     Texture$TextureFilter/Linear
                     Texture$TextureFilter/Linear)

@@ -63,17 +63,18 @@
     (Material. (into-array Attribute attrs))))
 
 (defn- initial-state []
-  (let [camera     (PerspectiveCamera.
-                    45
-                    (.getWidth Gdx/graphics)
-                    (.getHeight Gdx/graphics))
-        cube-size  15
-        cube-model (.createBox
-                    (ModelBuilder.) cube-size cube-size cube-size
-                    (material (->Color (conj red4 0.75)))
-                    (bit-or VertexAttributes$Usage/Position
-                            VertexAttributes$Usage/Normal))
-        env        (Environment.)
+  (let [angle-count 5
+        camera      (PerspectiveCamera.
+                     45
+                     (.getWidth Gdx/graphics)
+                     (.getHeight Gdx/graphics))
+        cube-size   15
+        cube-model  (.createBox
+                     (ModelBuilder.) cube-size cube-size cube-size
+                     (material (->Color (conj red4 0.75)))
+                     (bit-or VertexAttributes$Usage/Position
+                             VertexAttributes$Usage/Normal))
+        env         (Environment.)
         colors      [yellow1 yellow2 yellow3 yellow4
                      red1 red2 red3 red4
                      blue1 blue2 blue3 blue4
@@ -100,13 +101,9 @@
      :rect-size    50
      :cube-model   cube-model
      :colors       (repeatedly #(rand-nth colors))
-     :angle1       0
-     :angle2       0
-     :angle3       0
-     :angle4       0
-     :angle5       0
-     :angles       (repeat 0)
-     :angle-count  5
+     :angles       (vec (repeat angle-count 0))
+     :angle-count  angle-count
+     :angle-speeds (vec (repeatedly angle-count rand))
      :world-width  (.getWidth Gdx/graphics)
      :world-height (.getHeight Gdx/graphics)
      :camera       camera
@@ -208,11 +205,11 @@
   (let [[x y]     (:rect-pos state)
         z         -250
         rect-size (:rect-size state)
-        a1        (:angle1 state)
-        a2        (:angle2 state)
-        a3        (:angle3 state)
-        a4        (:angle4 state)
-        a5        (:angle5 state)]
+        a1 (get-in state [:angles 0])
+        a2 (get-in state [:angles 1])
+        a3 (get-in state [:angles 2])
+        a4 (get-in state [:angles 3])
+        a5 (get-in state [:angles 4])]
     (with-disposable [renderer (ShapeRenderer.)]
       (try
         (let [m (doto (Matrix4.)
@@ -267,11 +264,11 @@
     (.set mat (ColorAttribute/createDiffuse color))))
 
 (defn- transform-instance [^ModelInstance inst state angle-offset]
-  (let [a1        (:angle1 state)
-        a2        (:angle2 state)
-        a3        (:angle3 state)
-        a4        (:angle4 state)
-        a5        (:angle5 state)]
+  (let [a1 (get-in state [:angles 0])
+        a2 (get-in state [:angles 1])
+        a3 (get-in state [:angles 2])
+        a4 (get-in state [:angles 3])
+        a5 (get-in state [:angles 4])]
     (.. inst
         -transform
         idt
@@ -325,11 +322,11 @@
         (.begin batch)
         (let [w  (.-width glyph-layout)
               h  (.-height glyph-layout)
-              a1 (:angle1 state)
-              a2 (:angle2 state)
-              a3 (:angle3 state)
-              a4 (:angle4 state)
-              a5 (:angle5 state)]
+              a1 (get-in state [:angles 0])
+              a2 (get-in state [:angles 1])
+              a3 (get-in state [:angles 2])
+              a4 (get-in state [:angles 3])
+              a5 (get-in state [:angles 4])]
           (.setTransformMatrix
            batch
            (doto (Matrix4.)
@@ -358,15 +355,14 @@
 (defn- update-state [state delta]
   (swap! state
          (fn [state]
-           (let [a1 (:angle1 state)
-                 a2 (:angle2 state)
-                 a3 (:angle3 state)]
+           (let [a1 (get-in state [:angles 0])
+                 a2 (get-in state [:angles 1])
+                 a3 (get-in state [:angles 2])]
              (-> state
-                 (update :angle1 #(+ % (* delta 0.5)))
-                 (update :angle2 #(+ % (* delta 0.15)))
-                 (update :angle3 #(+ % (* delta 0.85)))
-                 (update :angle4 #(+ % (* delta 0.35)))
-                 (update :angle5 #(+ % (* delta 0.95)))
+                 (update :angles
+                         (fn [angles]
+                           (mapv #(+ %1 (* delta %2))
+                                 angles (:angle-speeds state))))
                  (assoc :rect-pos [(* 400 (Math/sin a1) (Math/sin a2) 0.25)
                                    (* 300 (Math/sin a1) (Math/sin a3) 0.25)])
                  (assoc :rect-size (+ 50 (* 25 (Math/sin a1)))))))))

@@ -56,12 +56,6 @@
 (defn- ->Color [[r g b & [a]]]
   (Color. r g b (or a 1.0)))
 
-(defn- material [^Color color]
-  (let [attrs [(ColorAttribute/createDiffuse color)
-               (BlendingAttribute. GL20/GL_SRC_ALPHA
-                                   GL20/GL_ONE_MINUS_SRC_ALPHA)]]
-    (Material. (into-array Attribute attrs))))
-
 (defn- initial-state []
   (let [angle-count 5
         camera      (PerspectiveCamera.
@@ -71,7 +65,10 @@
         cube-size   15
         cube-model  (.createBox
                      (ModelBuilder.) cube-size cube-size cube-size
-                     (material (->Color (conj red4 0.75)))
+                     (Material. (into-array
+                                 Attribute [(BlendingAttribute.
+                                             GL20/GL_SRC_ALPHA
+                                             GL20/GL_ONE_MINUS_SRC_ALPHA)]))
                      (bit-or VertexAttributes$Usage/Position
                              VertexAttributes$Usage/Normal))
         env         (Environment.)
@@ -83,7 +80,7 @@
     (.. camera -position (set 0.0 0.0 10.0))
     (.lookAt camera 0 0 0)
     (set! (.near camera) 0.1)
-    (set! (.far camera) 500.0)
+    (set! (.far camera) 1000.0)
     (.set env (ColorAttribute. ColorAttribute/AmbientLight
                                (float 0.4) (float 0.4) (float 0.4) (float 1)))
     (.add env (doto (DirectionalLight.)
@@ -93,17 +90,14 @@
      :font         (generate-font "fonts/AbrilFatface-Regular.ttf"
                                   #_"fonts/UbuntuMono-Regular.ttf"
                                   :size 100
-                                  :color Color/WHITE
-                                  :shadow-offset-x 6
-                                  :shadow-offset-y 6
-                                  :shadow-color (Color. 0 0 0 0))
+                                  :color (Color. 1 1 1 0.55))
      :rect-pos     [0 0]
-     :rect-size    50
+     :rect-size    30
      :cube-model   cube-model
-     :colors       (repeatedly #(rand-nth colors))
+     :colors       (repeatedly #(conj (rand-nth colors) (rand)))
      :angles       (vec (repeat angle-count 0))
      :angle-count  angle-count
-     :angle-speeds (vec (repeatedly angle-count rand))
+     :angle-speeds (vec (repeatedly angle-count #(- (* 1 (rand)) 0.5)))
      :world-width  (.getWidth Gdx/graphics)
      :world-height (.getHeight Gdx/graphics)
      :camera       camera
@@ -146,7 +140,6 @@
     (and (ctrl-pressed? state) (= key-code Input$Keys/R)) (reset-state! state)
     (and (ctrl-pressed? state) (= key-code Input$Keys/H)) (toggle-active state)
     (and (ctrl-pressed? state) (= key-code Input$Keys/Q)) (.exit Gdx/app))
-
   (swap! state (fn [state] (assoc-in state [:keys-pressed key-code] true))))
 
 (defn key-typed [state ch])
@@ -181,12 +174,12 @@
     ;; (.update camera)
     (.resize (:hud state) width height)))
 
-(defn- draw-rect [renderer size]
+(defn- draw-rect [renderer width height]
   (.rect renderer
-         (- (/ size 2))
-         (- (/ size 2))
-         size
-         size))
+         (- (/ width 2))
+         (- (/ height 2))
+         width
+         height))
 
 (defn- draw-cube [renderer size]
   (let [h (/ size 2)]
@@ -213,8 +206,8 @@
     (with-disposable [renderer (ShapeRenderer.)]
       (try
         (let [m (doto (Matrix4.)
-                  (.translate x y z)
-                  (.rotate 0 0 1 (* 180
+                  (.translate 123 -75 z)
+                  (.rotate 0 0 1 (* 5
                                     (Math/sin a1)
                                     (Math/sin a2)
                                     (Math/sin a3))))]
@@ -224,37 +217,32 @@
             (.begin ShapeRenderer$ShapeType/Filled)
             (set-color yellow2)
             (.setTransformMatrix m)
-            (draw-rect rect-size)
+            (draw-rect (* 2.5 rect-size) rect-size)
 
-            (set-color cyan1)
-            (.setTransformMatrix m)
-            (.translate (- (/ rect-size 2)) (- (/ rect-size 2)) 0)
-            (.rotate 0 0 1 (* 90 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-            (draw-rect (/ rect-size 4))
+            ;; (set-color cyan1)
+            ;; (.setTransformMatrix m)
+            ;; (.translate (- (/ rect-size 2)) (- (/ rect-size 2)) 0)
+            ;; (.rotate 0 0 1 (* 90 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+            ;; (draw-rect (/ rect-size 4))
 
-            (set-color cyan2)
-            (.setTransformMatrix m)
-            (.translate (/ rect-size 2) (- (/ rect-size 2)) 0)
-            (.rotate 0 0 1 (* 180 (Math/sin a3) (Math/sin a4) (Math/sin a5)))
-            (draw-rect (/ rect-size 4))
+            ;; (set-color cyan2)
+            ;; (.setTransformMatrix m)
+            ;; (.translate (/ rect-size 2) (- (/ rect-size 2)) 0)
+            ;; (.rotate 0 0 1 (* 180 (Math/sin a3) (Math/sin a4) (Math/sin a5)))
+            ;; (draw-rect (/ rect-size 4))
 
-            (set-color cyan3)
-            (.setTransformMatrix m)
-            (.translate (/ rect-size 2) (/ rect-size 2) 0)
-            (.rotate 0 0 1 (* 270 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-            (draw-rect (/ rect-size 4))
+            ;; (set-color cyan3)
+            ;; (.setTransformMatrix m)
+            ;; (.translate (/ rect-size 2) (/ rect-size 2) 0)
+            ;; (.rotate 0 0 1 (* 270 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+            ;; (draw-rect (/ rect-size 4))
 
-            (set-color cyan4)
-            (.setTransformMatrix m)
-            (.translate (- (/ rect-size 2)) (/ rect-size 2) 0)
-            (.rotate 0 0 1 (* 360 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
-            (draw-rect (/ rect-size 4))
-
-            (set-color red2)
-            .identity
-            (.translate x y z)
-            (.rotate 0 0 1 (* 180 (Math/sin a1) (Math/sin a2) (Math/sin a5)))
-            (draw-rect (/ rect-size 2))))
+            ;; (set-color cyan4)
+            ;; (.setTransformMatrix m)
+            ;; (.translate (- (/ rect-size 2)) (/ rect-size 2) 0)
+            ;; (.rotate 0 0 1 (* 360 (Math/sin a1) (Math/sin a3) (Math/sin a2)))
+            ;; (draw-rect (/ rect-size 4))
+            ))
         (finally
           (.end renderer))))))
 
@@ -272,29 +260,30 @@
     (.. inst
         -transform
         idt
-        (translate (float (* 50
+        (translate (float (* 80
                              (Math/sin (+ angle-offset a1))
                              (Math/sin (+ angle-offset a3))
                              (Math/sin (+ angle-offset a5))))
-                   (float (* 30
+                   (float (* 60
                              (Math/sin (+ angle-offset a2))
                              (Math/sin (+ angle-offset a3))
                              (Math/sin (+ angle-offset a4))))
-                   (float (- (* 80
+                   (float (- (* 100
                                 (Math/sin (+ angle-offset a1))
                                 (Math/sin (+ angle-offset a2))
                                 (Math/sin (+ angle-offset a4))) 150)))
         (rotate 1 0 0 (* 90
                          (Math/sin (+ angle-offset a1))
-                         (Math/sin (+ angle-offset a2))
-                         (Math/sin (+ angle-offset a3))))
-        (rotate 0 1 0 (* 10
-                         (Math/sin (+ angle-offset a3))
-                         (Math/sin (+ angle-offset a5))
-                         (Math/sin (+ angle-offset a3))))
-        (rotate 0 0 1 (* 90
                          (Math/sin (+ angle-offset a4))
+                         (Math/sin (+ angle-offset a5))))
+        (rotate 0 1 0 (* 110
+                         (Math/sin (+ angle-offset a1))
                          (Math/sin (+ angle-offset a3))
+                         (Math/sin (+ angle-offset a4))
+                         (Math/sin (+ angle-offset a5))))
+        (rotate 0 0 1 (* 90
+                         (Math/sin (+ angle-offset a1))
+                         (Math/sin (+ angle-offset a2))
                          (Math/sin (+ angle-offset a3)))))))
 
 (defn- render-cubes [state]
@@ -304,8 +293,8 @@
         colors     (vec (take cube-count (:colors state)))]
     (dotimes [i (count instances)]
       (let [inst (get instances i)]
-        (transform-instance inst state (* i (/ Math/PI cube-count)))
-        (set-material-color inst (->Color (conj (nth colors i) 0.85)))))
+        (transform-instance inst state (* i (/ Math/PI cube-count 0.35)))
+        (set-material-color inst (->Color (nth colors i)))))
     (with-disposable [batch (ModelBatch.)]
       (try
         (.begin batch (:camera state))
@@ -330,11 +319,11 @@
           (.setTransformMatrix
            batch
            (doto (Matrix4.)
-             (.translate (float (/ (.getWidth Gdx/graphics) 2))
-                         (float (/ (.getHeight Gdx/graphics) 2))
+             (.translate (float (* (.getWidth Gdx/graphics) 0.85))
+                         (float (* (.getHeight Gdx/graphics) 0.15))
                          (float 0))
              (.rotate (Vector3. 0 0 1)
-                      (* 45
+                      (* 35
                          (Math/sin (float a1))
                          (Math/sin (float a2))
                          (Math/sin (float a3))
@@ -365,12 +354,12 @@
                                  angles (:angle-speeds state))))
                  (assoc :rect-pos [(* 400 (Math/sin a1) (Math/sin a2) 0.25)
                                    (* 300 (Math/sin a1) (Math/sin a3) 0.25)])
-                 (assoc :rect-size (+ 50 (* 25 (Math/sin a1)))))))))
+                 (assoc :rect-size (+ 30 (* 2 (Math/sin a1)))))))))
 
 (defn -render [this delta]
   (try
     (let [state @(.state this)]
-      (.glClearColor (Gdx/gl) 0 0 0 0)
+      (.glClearColor (Gdx/gl) 0.1 0.12 0.15 1)
       (.glClear (Gdx/gl)
                 (bit-or GL20/GL_COLOR_BUFFER_BIT
                         GL20/GL_DEPTH_BUFFER_BIT
@@ -378,9 +367,10 @@
                           GL20/GL_COVERAGE_BUFFER_BIT_NV
                           0)))
       (when (:active? state)
-        (render-text state "hello, libGDX!")
-        (render-rects state)
+        (.update (:camera state) true)
         (render-cubes state)
+        (render-rects state)
+        (render-text state "kuber...")
         (update-state (.state this) delta))
       (.render (:hud state)))
     (catch Exception e
